@@ -12,4 +12,13 @@ RSpec.describe Installation, :type => :model do
 
     expect(installation.uuid).to eq('a large uuid')
   end
+
+  it "should index installation after save" do
+    indexer = double('indexer')
+    expect(Indexer).to receive(:new).and_return(indexer)
+    expect(indexer).to receive(:index_installation).with(installation)
+
+    installation.save
+  end
+
 end
