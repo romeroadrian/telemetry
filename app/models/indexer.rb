@@ -14,6 +14,25 @@ class Indexer
     }
   end
 
+  def index_event(event)
+    payload = event.payload_json
+
+    case payload
+    when Hash
+      # TODO use bulk
+      payload.each do |key, value|
+        @client.index  index: index, type: "event_#{event.kind}", id: "#{event.id}_#{key}", body: {
+          installation_uuid: event.installation.uuid,
+          reported_at: event.created_at.iso8601,
+          key: key,
+          value: value
+        }
+      end
+    else
+      raise 'unsupported payload'
+    end
+  end
+
   private
 
   def index

@@ -11,10 +11,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150713190111) do
+ActiveRecord::Schema.define(version: 20150714190146) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "events", force: :cascade do |t|
+    t.integer  "installation_id"
+    t.string   "kind"
+    t.text     "payload"
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
+  end
+
+  add_index "events", ["installation_id"], name: "index_events_on_installation_id", using: :btree
 
   create_table "installations", force: :cascade do |t|
     t.string   "uuid"
@@ -30,4 +40,5 @@ ActiveRecord::Schema.define(version: 20150713190111) do
 
   add_index "installations", ["uuid"], name: "index_installations_on_uuid", using: :btree
 
+  add_foreign_key "events", "installations"
 end
