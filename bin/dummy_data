@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+require 'rest-client'
+require 'elasticsearch'
+require 'oj'
+
+def url(path)
+  "http://localhost:3000/api/v1/#{path}"
+end
+
+client = Elasticsearch::Client.new log: true
+index = 'telemetry-test'
+
+client.indices.delete index: index rescue nil
+
+client.indices.create index: index, type: 'installation', body: {
+  mappings: {
+    installation: {
+      properties: {
+        last_reported_at: { type: 'date' },
+        location: { type: 'geo_point' },
+        uuid: { type: 'string', index: :not_analyzed}
+      }
+    }
+  }
+}
+
+def create_installation
+  response = RestClient.post url('installations'), {application: 'verboice'}.to_json, content_type: :json, accept: :json
+  Oj.load response.body
+end
+
+def create_channels_by_type_event(installation)
+  channels = [:twilio, :callcentric, :sip, :custom, :voxeo]
+  payload = Oj.dump Hash[*channels.map{|type| [type, (rand * 100).to_i]}.flatten]
+  create_event installation, 'channels-by-type', payload
+end
+
+def create_event(installation, kind, payload)
+  response = RestClient.post url("installations/#{installation['uuid']}/events"), {kind: kind, payload: payload}.to_json, content_type: :json, accept: :json
+  Oj.load response
+end
+
+10.times do
+  installation = create_installation
+  50.times do
+    create_channels_by_type_event installation
+  end
+end
